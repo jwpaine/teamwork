@@ -3,8 +3,9 @@ const bodyParser = require('body-parser')
 const request = require('request')
 var cookieParser = require('cookie-parser');
 var session      = require('express-session');
-
+var teamwork = require('./teamwork.js');
 const app = express()
+
 
 // required for passport
 app.use(session({ 
@@ -37,21 +38,16 @@ app.get('/login', function(req, res) {
 // endpoint for Teamwork app login flow (OAuth)
 app.get('/auth', function(req, res) {
     // get code
-     var auth_code = req.query.code;
-     console.log('received code: ' + auth_code);
-
-     console.log('sending post request to teamwork launchpad to get perm access token...');
-     uri = 'https://www.teamwork.com/launchpad/v1/token.json'
-     request.post(
-        uri,
-        { json: { code:  auth_code} },
-        function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                console.log(body)
-            }
+    var auth_code = req.query.code;
+    teamwork.authenticate(auth_code, function(err, cb) {
+        if(err) {
+            res.redirect('/login');
+            return
         }
-    );
 
+        res.send(cb);
+        
+    });
 });
 // Spin up server
 app.listen(app.get('port'), function() {
