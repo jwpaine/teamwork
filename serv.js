@@ -4,6 +4,7 @@ const request = require('request')
 var cookieParser = require('cookie-parser');
 var session      = require('express-session');
 var teamwork = require('./teamwork.js');
+var config = require('./config.js');
 const app = express()
 
 
@@ -44,13 +45,22 @@ app.get('/auth', function(req, res) {
             res.redirect('/login');
             return
         }
-
         res.send(cb);
-        
     });
 });
 // Spin up server
 app.listen(app.get('port'), function() {
 	console.log('running on port', app.get('port'))
 })
+
+
+teamwork.getTasks(config.api_key, 175854, function(err, tasklist) {
+    if (err) {
+        console.log(err);
+        return
+    }
+    console.log(tasklist);
+});
+
+
 
