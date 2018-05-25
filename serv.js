@@ -1,66 +1,65 @@
-const express = require('express')
-const bodyParser = require('body-parser')
+
 const request = require('request')
-var cookieParser = require('cookie-parser');
-var session      = require('express-session');
 var teamwork = require('./teamwork.js');
 var config = require('./config.js');
-const app = express()
+var fs = require('fs');
 
 
-// required for passport
-app.use(session({ 
-	cookie: {
-		path : '/',
-		httpOnly : false,
-		maxAge : 24*60*60*1000
-	},
-	secret: 'Nhs7Fg58Jjshhr67ujhbvr7hsw34rtghj' ,
-	resave: true,
-	saveUninitialized: true
-	
-	})); // session secret
 
-app.use(cookieParser()); // read cookies (needed for auth)
-app.set('port', (process.env.PORT || 8080))
-// Process application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({extended: true}))
-// Process application/json
-app.use(bodyParser.json())
-// Index route
-app.get('/', function (req, res) {
-	res.render('index.ejs');
-});
-app.get('/login', function(req, res) {
-    // render the page and pass in any flash data if it exists
-    var redirect_uri  = "http://127.0.0.1:8080/auth";
-	res.redirect('https://www.teamwork.com/launchpad/login?redirect_uri=' + redirect_uri); 
-});
-// endpoint for Teamwork app login flow (OAuth)
-app.get('/auth', function(req, res) {
-    // get code
-    var auth_code = req.query.code;
-    teamwork.authenticate(auth_code, function(err, cb) {
-        if(err) {
-            res.redirect('/login');
-            return
-        }
-        res.send(cb);
-    });
-});
-// Spin up server
-app.listen(app.get('port'), function() {
-	console.log('running on port', app.get('port'))
+
+
+
+getTasks(function(err, tasks) {
+    if (err) {
+        console.log(err)
+        return
+    }
+    console.log(tasks);
 })
 
 
-teamwork.getTasks(config.api_key, 175854, function(err, tasklist) {
-    if (err) {
-        console.log(err);
+
+
+
+function getTasks(callback) {
+    teamwork.getTasks(config.api_key, 175854, function(err, tl) {
+    
+        if (err) {
+        callback(err, null);
         return
-    }
-    console.log(tasklist);
-});
+        }
+        var tasklist = JSON.parse(tl)['todo-items'];
+        var obj = {
+            tasks : []
+        };
+        for (var task in tasklist) {
+
+            var t = {
+                id : tasklist[task].id,
+                content : tasklist[task].content,
+                description : tasklist[task]['description'],
+                owner : {
+                    'firstname' : tasklist[task]['responsible-party-firstname'],
+                    'lastname' : tasklist[task]['responsible-party-lastname']
+                } 
+            }
+            obj.tasks.push(t);
+        }
+
+        console.log('Received ' + obj.tasks.length + ' tasks');
+        callback(null, obj);
+    });
+};
+
+function writeTasks(obj) {
+    var json = JSON.stringify(obj);
+    fs.writeFile('tasks.json', json, function(err) {
+        if (err) {
+           console.log(err)
+        }
+       
+    });
+}
 
 
 

@@ -35,7 +35,7 @@ exports.getUser = function(callback) {
 /* return tasks for project {api_key}, {id} */
 exports.getTasks = function(api_key, id, callback) {
     var company = "geigercp";
-    var action = "tasklists/" + id + "/tasks.json?sort=startdate";
+    var action = "tasklists/" + id + "/tasks.json?status=new";
     var auth = "Basic " + new Buffer.alloc(64, api_key + ":xxx").toString("base64");
    
     request.get( {
