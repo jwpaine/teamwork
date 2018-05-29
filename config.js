@@ -1,4 +1,11 @@
 module.exports = {
 
-    'api_key' : ''
+	teamwork : {
+		'api_key' : '',
+		pullIntervalMinutes : 5
+	},
+	bot : {
+		id : 'foo@gmail.com',
+		password: 'password'
+	}
  }

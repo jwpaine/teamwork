@@ -1,41 +1,55 @@
 
 const request = require('request')
+
 var teamwork = require('./teamwork.js');
 var config = require('./config.js');
+var bot = require('./bot.js');
 var fs = require('fs');
 
+setInterval(run, config.teamwork.pullIntervalMinutes*60000);
 
+function run() {
 
-
-
-
-getTasks(function(err, remoteTasks) {
-    if (err) {
-        console.log(err)
-        return
+    getTasks(function(err, remoteTasks) {
+        if (err) {
+            console.log(err)
+            return
+        }
+        console.log('Received: ' + remoteTasks.tasks.length + " tasks from remote");
+        
+        // check if tasks.json exists locally
+        if (fs.existsSync('tasks.json')) {
+            readTasks(function(err, localTasks) {
+                if (err) {
+                    console.log(err)
+                    return
+                }
+                compareTaskLists(remoteTasks.tasks, localTasks.tasks);
+            });
+            return
+        }
+        // tasks.json does not exist, write task list
+        console.log('recording tasks locally');
+        writeTasks(remoteTasks);
+      
+    }) 
+    
+}
+function compareTaskLists(remote, local) {
+    console.log('comparing remote to local in O(n)');
+  
+    dict = {};
+    for (var l in local) {
+        dict[local[l].id] = true;
     }
-    console.log('Received: ' + remoteTasks.tasks.length + " tasks from remote");
-   // compareLists(tasks.tasks, readTasks().tasks);
-   readTasks(function(err, localTasks) {
-       if (err) {
-           console.log(err)
-           return
-       }
-       compareLists(remoteTasks.tasks, localTasks.tasks);
-   });
-}) 
-
-function compareLists(remote, local) {
-    console.log('comparing remote to local');
-  /*  for (var r in remote) {
-        console.log(remote[r].id);
-    } */
-     for (var l in local) {
-        console.log(local[l].id);
+    for (var r in remote) {
+        if (dict[remote[r].id] == undefined) {
+            console.log(remote[r]);
+        }
     }
 }
 function getTasks(callback) {
-    teamwork.getTasks(config.api_key, 175854, function(err, tl) {
+    teamwork.getTasks(config.teamwork.api_key, 175854, function(err, tl) {
     
         if (err) {
             callback(err, null);
@@ -76,18 +90,12 @@ function readTasks(callback) {
             return;
         } 
             obj = JSON.parse(data); 
-
             callback(null, obj)
-            
-            //now it an object
-         /*   obj.table.push({id: 2, square:3}); //add some data
-            json = JSON.stringify(obj); //convert it back to json
-            fs.writeFile('myjsonfile.json', json, 'utf8', callback); // write it back 
-         */
-    
-        });
-    }
+    });
+}
 
+bot.init(config.bot.id, config.bot.password, function(c) {
 
+});
 
 
